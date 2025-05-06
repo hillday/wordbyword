@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接字游戏 | Word by Word Game</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --bg-color: #f9f9f9;
+            --text-color: #333;
+            --border-color: #ddd;
+            --highlight-color: #f1c40f;
+            --error-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .settings {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+        }
+
+        .settings div {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .game-area {
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 20px;
+            min-height: 200px;
+            position: relative;
+        }
+
+        .story-text {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .character {
+            display: inline-block;
+            padding: 2px 4px;
+            margin: 0 2px;
+            border-radius: 3px;
+            animation: fade-in 0.5s ease-in-out;
+        }
+
+        .character.ai {
+            background-color: rgba(46, 204, 113, 0.2);
+        }
+
+        .character.human {
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+
+        .character.current {
+            border-bottom: 2px solid var(--highlight-color);
+            animation: blink 1s infinite;
+        }
+
+        .input-area {
+            display: flex;
+            margin-top: 20px;
+            align-items: center;
+        }
+
+        .input-area input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+
+        .ai-color {
+            background-color: rgba(46, 204, 113, 0.2);
+        }
+
+        .human-color {
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+
+        .language-dropdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .error {
+            color: var(--error-color);
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        .github-link {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .github-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .github-link a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .settings {
+                flex-direction: column;
+            }
+            
+            .settings div {
+                width: 100%;
+            }
+            
+            .input-area {
+                flex-direction: column;
+            }
+            
+            .input-area input {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <select id="language-selector" class="language-dropdown">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+        </select>
+        
+        <h1 id="title">接字游戏</h1>
+        
+        <button id="start-game" class="start-button">开始游戏</button>
+        
+        <div class="game-area" id="game-area" style="display: none;">
+            <div class="story-text" id="story-text"></div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color ai-color"></span>
+                    <span id="ai-legend">AI生成</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color human-color"></span>
+                    <span id="human-legend">人类输入</span>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="user-input" maxlength="1" placeholder="输入一个字">
+                <button id="submit-character">提交</button>
+            </div>
+            
+            <div class="status" id="status"></div>
+        </div>
+        
+        <div class="error" id="error-message"></div>
+        
+        <div class="github-link">
+            <a href="https://github.com/yourusername/word-by-word-game" target="_blank" id="github-text">在GitHub上查看代码</a>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            'zh': {
+                'title': '接字游戏',
+                'startButton': '开始游戏',
+                'inputPlaceholder': '输入一个字',
+                'submitButton': '提交',
+                'aiLegend': 'AI生成',
+                'humanLegend': '人类输入',
+                'waitingStatus': '等待AI生成...',
+                'yourTurnStatus': '轮到你了，请输入一个字',
+                'gameCompleteStatus': '游戏完成！',
+                'errorOneChar': '请只输入一个字符',
+                'errorServer': '服务器错误，请稍后再试',
+                'completeMessage': '句子已经达到约30个字，游戏结束！',
+                'githubLink': '在GitHub上查看代码'
+            },
+            'en': {
+                'title': 'Word by Word Game',
+                'startButton': 'Start Game',
+                'inputPlaceholder': 'Enter one character',
+                'submitButton': 'Submit',
+                'aiLegend': 'AI Generated',
+                'humanLegend': 'Human Input',
+                'waitingStatus': 'Waiting for AI...',
+                'yourTurnStatus': 'Your turn, please enter one character',
+                'gameCompleteStatus': 'Game completed!',
+                'errorOneChar': 'Please enter only one character',
+                'errorServer': 'Server error, please try again later',
+                'completeMessage': 'The sentence has reached about 30 characters, game over!',
+                'githubLink': 'View code on GitHub'
+            },
+            'ja': {
+                'title': '文字つなぎゲーム',
+                'startButton': 'ゲーム開始',
+                'inputPlaceholder': '1文字入力',
+                'submitButton': '送信',
+                'aiLegend': 'AI生成',
+                'humanLegend': '人間入力',
+                'waitingStatus': 'AIの応答を待っています...',
+                'yourTurnStatus': 'あなたの番です。1文字入力してください',
+                'gameCompleteStatus': 'ゲーム完了！',
+                'errorOneChar': '1文字だけ入力してください',
+                'errorServer': 'サーバーエラー、後でもう一度お試しください',
+                'completeMessage': '文章が約30文字に達しました。ゲーム終了！',
+                'githubLink': 'GitHubでコードを見る'
+            },
+            'ko': {
+                'title': '글자 이어가기 게임',
+                'startButton': '게임 시작',
+                'inputPlaceholder': '한 글자 입력',
+                'submitButton': '제출',
+                'aiLegend': 'AI 생성',
+                'humanLegend': '사용자 입력',
+                'waitingStatus': 'AI가 생성 중...',
+                'yourTurnStatus': '당신 차례입니다. 한 글자를 입력하세요',
+                'gameCompleteStatus': '게임 완료!',
+                'errorOneChar': '한 글자만 입력하세요',
+                'errorServer': '서버 오류, 나중에 다시 시도하세요',
+                'completeMessage': '문장이 약 30자에 도달했습니다. 게임 종료!',
+                'githubLink': 'GitHub에서 코드 보기'
+            }
+        };
+
+        let currentLanguage = 'zh';
+        let storyText = '';
+        let isGameStarted = false;
+        let isAiTurn = true;
+        let charCount = 0;
+        let sessionId = '';
+        const maxCharCount = 30;
+
+        // DOM elements
+        const languageSelector = document.getElementById('language-selector');
+        const titleElement = document.getElementById('title');
+        const startGameButton = document.getElementById('start-game');
+        const gameArea = document.getElementById('game-area');
+        const storyTextElement = document.getElementById('story-text');
+        const userInput = document.getElementById('user-input');
+        const submitButton = document.getElementById('submit-character');
+        const statusElement = document.getElementById('status');
+        const errorMessageElement = document.getElementById('error-message');
+        const aiLegendElement = document.getElementById('ai-legend');
+        const humanLegendElement = document.getElementById('human-legend');
+        const githubLinkElement = document.getElementById('github-text');
+
+        // Update UI language
+        function updateLanguage(lang) {
+            currentLanguage = lang;
+            const texts = translations[lang];
+            
+            titleElement.textContent = texts.title;
+            startGameButton.textContent = texts.startButton;
+            userInput.placeholder = texts.inputPlaceholder;
+            submitButton.textContent = texts.submitButton;
+            aiLegendElement.textContent = texts.aiLegend;
+            humanLegendElement.textContent = texts.humanLegend;
+            githubLinkElement.textContent = texts.githubLink;
+        }
+
+        // Language selector
+        languageSelector.addEventListener('change', function() {
+            updateLanguage(this.value);
+        });
+
+        // Start game
+        startGameButton.addEventListener('click', async function() {
+            errorMessageElement.textContent = '';
+            startGameButton.disabled = true;
+            gameArea.style.display = 'block';
+            isGameStarted = true;
+            isAiTurn = true;
+            storyText = '';
+            charCount = 0;
+            storyTextElement.innerHTML = '';
+            statusElement.textContent = translations[currentLanguage].waitingStatus;
+            
+            // Create a loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'loading';
+            statusElement.appendChild(loadingIndicator);
+            
+            try {
+                // Create a new session
+                const response = await fetch('/api/start-game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ language: currentLanguage })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to start game');
+                }
+                
+                const data = await response.json();
+                sessionId = data.sessionId;
+                
+                // Add initial characters
+                for (const char of data.initialText) {
+                    addCharacterToStory(char, 'ai');
+                }
+                
+                isAiTurn = false;
+                statusElement.textContent = translations[currentLanguage].yourTurnStatus;
+                
+            } catch (error) {
+                console.error('Error starting game:', error);
+                errorMessageElement.textContent = translations[currentLanguage].errorServer;
+                startGameButton.disabled = false;
+                statusElement.textContent = '';
+            }
+        });
+
+        // Submit character
+        submitButton.addEventListener('click', function() {
+            submitHumanCharacter();
+        });
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitHumanCharacter();
+            }
+        });
+
+        // Submit human character
+        async function submitHumanCharacter() {
+            if (!isGameStarted || isAiTurn) return;
+            
+            const char = userInput.value;
+            if (char.length !== 1) {
+                errorMessageElement.textContent = translations[currentLanguage].errorOneChar;
+                return;
+            }
+            
+            errorMessageElement.textContent = '';
+            addCharacterToStory(char, 'human');
+            userInput.value = '';
+            isAiTurn = true;
+            statusElement.textContent = translations[currentLanguage].waitingStatus;
+            
+            // Create a loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'loading';
+            statusElement.appendChild(loadingIndicator);
+            
+            // Check if game should end
+            if (charCount >= maxCharCount) {
+                endGame();
+                return;
+            }
+            
+            // Get AI's next character
+            try {
+                const response = await fetch('/api/next-character', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        currentText: storyText,
+                        language: currentLanguage
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get AI response');
+                }
+                
+                const data = await response.json();
+                addCharacterToStory(data.nextChar, 'ai');
+                
+                isAiTurn = false;
+                statusElement.textContent = translations[currentLanguage].yourTurnStatus;
+                
+                // Check if game should end
+                if (charCount >= maxCharCount) {
+                    endGame();
+                }
+                
+            } catch (error) {
+                console.error('Error getting AI response:', error);
+                errorMessageElement.textContent = translations[currentLanguage].errorServer;
+                statusElement.textContent = '';
+            }
+        }
+
+        // Add character to story
+        function addCharacterToStory(char, source) {
+            storyText += char;
+            charCount++;
+            
+            const charSpan = document.createElement('span');
+            charSpan.textContent = char;
+            charSpan.className = `character ${source}`;
+            storyTextElement.appendChild(charSpan);
+            
+            // Scroll to bottom if needed
+            gameArea.scrollTop = gameArea.scrollHeight;
+        }
+
+        // End game
+        function endGame() {
+            isGameStarted = false;
+            statusElement.textContent = translations[currentLanguage].gameCompleteStatus;
+            userInput.disabled = true;
+            submitButton.disabled = true;
+            errorMessageElement.textContent = translations[currentLanguage].completeMessage;
+            startGameButton.disabled = false;
+            
+            // Reset for next game
+            setTimeout(() => {
+                userInput.disabled = false;
+                submitButton.disabled = false;
+                errorMessageElement.textContent = '';
+            }, 3000);
+        }
+
+        // Initialize
+        updateLanguage(currentLanguage);
+    </script>
+</body>
+</html>

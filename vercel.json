@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "env": {
+    "OPENAI_API_KEY": "@openai_api_key",
+    "API_URL": "@api_url",
+    "API_MODEL": "@api_model"
+
+  }
+}
